@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phishing Website Detector</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+    <h1>🔒 Phishing Website Detector</h1>
+
+    <input
+        type="text"
+        id="urlInput"
+        placeholder="Enter website URL..."
+    >
+
+    <button onclick="detect()">Check Website</button>
+
+    <div id="result"></div>
+
+    <div id="details"></div>
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>
+body{
+    font-family:Arial;
+    background:#f5f7fa;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+}
+
+.container{
+    width:600px;
+    background:white;
+    padding:30px;
+    border-radius:10px;
+    box-shadow:0 0 15px rgba(0,0,0,.15);
+}
+
+h1{
+    text-align:center;
+}
+
+input{
+    width:100%;
+    padding:12px;
+    font-size:17px;
+    margin-top:15px;
+}
+
+button{
+    width:100%;
+    padding:12px;
+    margin-top:15px;
+    background:#0077ff;
+    color:white;
+    border:none;
+    font-size:18px;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#005edb;
+}
+
+#result{
+    margin-top:25px;
+    font-size:24px;
+    font-weight:bold;
+}
+
+#details{
+    margin-top:15px;
+    line-height:1.8;
+}
+function detect(){
+
+    let input=document.getElementById("urlInput").value.trim();
+
+    if(input===""){
+        alert("Enter URL");
+        return;
+    }
+
+    if(!input.startsWith("http")){
+        input="http://"+input;
+    }
+
+    let url;
+
+    try{
+        url=new URL(input);
+    }
+    catch(e){
+        alert("Invalid URL");
+        return;
+    }
+
+    let score=0;
+    let reasons=[];
+    if(url.protocol!=="https:"){
+        score+=20;
+        reasons.push("❌ Not using HTTPS");
+    }
+    if(input.length>75){
+        score+=15;
+        reasons.push("⚠ URL is very long");
+    }
+    const ipRegex=/^(?:\d{1,3}\.){3}\d{1,3}$/;
+
+    if(ipRegex.test(url.hostname)){
+        score+=30;
+        reasons.push("⚠ Uses IP Address instead of domain");
+    }
+    if(input.includes("@")){
+        score+=25;
+        reasons.push("⚠ Contains @ symbol");
+    }
+    let extra=input.substring(8);
+
+    if(extra.includes("//")){
+        score+=20;
+        reasons.push("⚠ Multiple // found");
+    }
+    if(url.hostname.includes("-")){
+        score+=10;
+        reasons.push("⚠ Hyphen in domain");
+    }
+    if(url.hostname.split(".").length>4){
+        score+=20;
+        reasons.push("⚠ Too many subdomains");
+    }
+    let words=[
+        "login",
+        "verify",
+        "secure",
+        "account",
+        "bank",
+        "paypal",
+        "update",
+        "confirm",
+        "wallet",
+        "crypto",
+        "signin"
+    ];
+
+    let lower=input.toLowerCase();
+
+    words.forEach(word=>{
+        if(lower.includes(word)){
+            score+=5;
+            reasons.push("Keyword: "+word);
+        }
+    });
+    let result=document.getElementById("result");
+
+    if(score>=60){
+        result.innerHTML="🔴 High Risk of Phishing";
+        result.style.color="red";
+    }
+    else if(score>=30){
+        result.innerHTML="🟠 Suspicious Website";
+        result.style.color="orange";
+    }
+    else{
+        result.innerHTML="🟢 Looks Safe";
+        result.style.color="green";
+    }
+
+    document.getElementById("details").innerHTML=
+    `
+    <b>Risk Score:</b> ${score}/100
+    <br><br>
+    ${reasons.join("<br>")}
+    `;
+}
